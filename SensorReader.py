@@ -123,7 +123,6 @@ def main():
         temperature = temperature / 10 # Temperature Conversion
         humidity = humidity / 10 # Humidity Conversion
         
-        # print("溫度:", temperature, " 濕度:", humidity)
         # ============= Conversion and translate =============
         
         # ============= Save to Excel =============

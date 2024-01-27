@@ -128,7 +128,7 @@ parameter_names = [
 ]
 
 try:
-    ser = serial.Serial('COM8', baudrate = 9600) # define COM PORT and baudrate
+    ser = serial.Serial(port = 'COM8', baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1) # define COM PORT and baudrate
     for i in command_set:
         data_length = int(i[4] + i[5]) * 2 + 5
         data = modbus_run(ser = ser, origin_command = i, data_length = data_length)

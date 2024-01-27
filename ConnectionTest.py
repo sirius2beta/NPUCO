@@ -25,9 +25,13 @@ def modbus_run(ser, origin_command, data_length):
 
     return data
 # ================Modbus function block================
-
 ser = serial.Serial(port = 'COM8', baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1) # define COM PORT and baudrate
+origin_command = ['01', '0D'] # , 'C1', 'D5'
+data = modbus_run(ser = ser, origin_command = origin_command, data_length = 5)
+
+"""
 origin_command = ['01', '03', '15', '4A', '00', '07', '21', 'D2']
 data_length = int(origin_command[4] + origin_command[5]) * 2 + 5
 data = modbus_run(ser = ser, origin_command = origin_command, data_length = data_length)
 print(data)
+"""

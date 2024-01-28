@@ -1,6 +1,6 @@
 import bluetooth
 
-target_name = "My Phone"
+target_name = "846888 PowerPack"
 target_address = None
 
 nearby_devices = bluetooth.discover_devices()

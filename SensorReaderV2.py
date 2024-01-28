@@ -2,6 +2,7 @@ import serial
 import time
 import struct
 import threading
+import tkinter as tk
 
 # ================Modbus function block================
 def modbusCRC(msg : str) -> int: # CRC calculator
@@ -190,3 +191,14 @@ def main():
 main_thread = threading.Thread(target = main)  # define thread
 main_thread.start() # thread start
 
+# creat Tkinter
+root = tk.Tk()
+root.title("Sensor Reader")
+root.protocol("WM_DELETE_WINDOW", close)
+
+# creat label, button and Text Elements
+label_status = tk.Label(root, text = "RUN", width=10, height=7, bg = "#02DF82" )
+label_status.grid(row=0, column=0, rowspan=2)
+
+# Run loop
+root.mainloop()

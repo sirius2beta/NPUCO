@@ -1,10 +1,4 @@
-import time 
-import datetime
-import threading
-import openpyxl 
 import serial
-import os
-import tkinter as tk
 
 # ================Modbus function block================
 def modbusCRC(msg : str) -> int: # CRC calculator
@@ -20,12 +14,12 @@ def modbusCRC(msg : str) -> int: # CRC calculator
     ba = crc.to_bytes(2, byteorder='little')
     return ba
 
-def modbus_run(ser, origin_send, data_length):
-    bytes_send = bytes([int(x, 16) for x in origin_send]) # list to bytes
+def modbus_run(ser, origin_command, data_length):
+    bytes_send = bytes([int(x, 16) for x in origin_command]) # list to bytes
     crc = modbusCRC(bytes_send) # CRC calculator function
-    origin_send.append(str('{:02X}'.format(crc[0]))) # append crc LO 
-    origin_send.append(str('{:02X}'.format(crc[1]))) # append crc HI     
-    bytes_send = bytes([int(x, 16) for x in origin_send])
+    origin_command.append(str('{:02X}'.format(crc[0]))) # append crc LO 
+    origin_command.append(str('{:02X}'.format(crc[1]))) # append crc HI     
+    bytes_send = bytes([int(x, 16) for x in origin_command])
 
     ser.write(bytes_send) # send command
     data = ser.read(data_length) # read response
@@ -33,140 +27,126 @@ def modbus_run(ser, origin_send, data_length):
     return data
 # ================Modbus function block================
 
-# =================Excel function block=================
-def creat_log_and_excel(excel_column):
-    # get specified folder path and created log
-    log_folder_path = os.path.abspath(__file__)
-    log_folder_path = os.path.dirname(log_folder_path)
-    log_folder_path = log_folder_path.replace("\\", "/") + "/log/"
-    os.makedirs(log_folder_path, exist_ok=True)
+command_set = [
+    ['01', '03', '15', '4A', '00', '07', '21', 'D2'],
+    ['01', '03', '15', '51', '00', '07', '51', 'D5'],
+    ['01', '03', '15', '58', '00', '07', '81', 'D7'],
+    ['01', '03', '15', '5F', '00', '07', '30', '16'],
+    ['01', '03', '15', '66', '00', '07', 'E0', '1B'],
+    ['01', '03', '15', '82', '00', '07', 'A0', '2C'],
+    ['01', '03', '15', '89', '00', '07', 'D1', 'EE'],
+    ['01', '03', '15', '90', '00', '07', '00', '29'],
+    ['01', '03', '15', '97', '00', '07', 'B1', 'E8'],
+    ['01', '03', '15', '9E', '00', '07', '61', 'EA'],
+    ['01', '03', '15', 'A5', '00', '07', '10', '27'],
+    ['01', '03', '15', 'B3', '00', '07', 'F1', 'E3'],
+    ['01', '03', '15', 'BA', '00', '07', '21', 'E1'],
+    ['01', '03', '15', 'C1', '00', '07', '51', 'F8'],
+    ['01', '03', '15', 'C8', '00', '07', '81', 'FA'],
+    ['01', '03', '15', 'CF', '00', '07', '30', '3B'],
+    ['01', '03', '15', 'D6', '00', '07', 'E1', 'FC'],
+    ['01', '03', '15', 'EB', '00', '07', '70', '30'],
+    ['01', '03', '15', 'F2', '00', '07', 'A1', 'F7'],
+    ['01', '03', '16', '15', '00', '07', '11', '84'],
+    ['01', '03', '16', '1C', '00', '07', 'C1', '86'],
+    ['01', '03', '16', '23', '00', '07', 'F1', '8A'],
+    ['01', '03', '16', '2A', '00', '07', '21', '88'],
+    ['01', '03', '16', '31', '00', '07', '51', '8F'],
+    ['01', '03', '16', '38', '00', '07', '81', '8D'],
+    ['01', '03', '16', '3F', '00', '07', '30', '4C'],
+    ['01', '03', '16', '46', '00', '07', 'E1', '95'],
+    ['01', '03', '16', '4D', '00', '07', '90', '57'],
+    ['01', '03', '16', '54', '00', '07', '41', '90'],
+    ['01', '03', '16', '5B', '00', '07', '71', '93'],
+    ['01', '03', '16', '62', '00', '07', 'A1', '9E'],
+    ['01', '03', '16', '69', '00', '07', 'D0', '5C'],
+    ['01', '03', '16', '93', '00', '07', 'F0', '6D'],
+    ['01', '03', '16', '9A', '00', '07', '20', '6F'],
+    ['01', '03', '16', 'A1', '00', '07', '51', 'A2'],
+    ['01', '03', '16', 'A8', '00', '07', '81', 'A0'],
+    ['01', '03', '16', 'BD', '00', '07', '90', '64'],
+    ['01', '03', '16', 'C4', '00', '07', '41', 'BD'],
+    ['01', '03', '16', 'D9', '00', '07', 'D1', 'BB'],
+    ['01', '03', '16', 'E0', '00', '07', '01', 'B6'],
+    ['01', '03', '17', '18', '00', '07', '81', 'BB'],
+    ['01', '03', '17', '1F', '00', '07', '30', '7A'],
+    ['01', '03', '17', '26', '00', '07', 'E0', '77'],
+    ['01', '03', '17', '2D', '00', '07', '91', 'B5'],
+    ['01', '03', '17', '73', '00', '07', 'F0', '67'],
+    ['01', '03', '17', '7A', '00', '07', '20', '65'],
+    ['01', '03', '17', 'A4', '00', '07', '40', '5F']
+]
 
-    target_file_name = str(datetime.datetime.today().date()) + ".xlsx" # Use today's date as the filename
-    file_path_and_name = log_folder_path + target_file_name  # log_folder_path + target_file_name
+parameter_names = [
+    "temperature",
+    "pressure",
+    "depth",
+    "level_depth_to_water",
+    "level_surface_elevation",
+    "actual_conductivity",
+    "specific_conductivity",
+    "resistivity",
+    "salinity",
+    "total_dissolved_solids",
+    "density_of_water",
+    "barometric_pressure",
+    "pH",
+    "pH_mv",
+    "orp",
+    "dissolved_oxygen_concentration",
+    "dissolved_oxygen_percent_saturation",
+    "chloride",
+    "turbidity",
+    "oxygen_partial_pressure",
+    "total_suspended_solids",
+    "external_voltage",
+    "battery_capacity_remaining",
+    "rhodamine_wt_concentration",
+    "rhodamine_wt_fluorescence_intensity",
+    "chloride_mv",
+    "nitrate_as_nitrogen_concentration",
+    "nitrate_mv",
+    "ammonium_as_nitrogen_concentration",
+    "ammonium_mv",
+    "ammonia_as_nitrogen_concentration",
+    "total_ammonia_as_nitrogen_concentration",
+    "eh",
+    "velocity",
+    "chlorophyll_a_concentration",
+    "chlorophyll_a_fluorescence_intensity",
+    "blue_green_algae_phycocyanin_concentration",
+    "blue_green_algae_phycocyanin_fluorescence_intensity",
+    "blue_green_algae_phycoerythrin_concentration",
+    "blue_green_algae_phycoerythrin_fluorescence_intensity",
+    "fluorescein_wt_concentration",
+    "fluorescein_wt_fluorescence_intensity",
+    "fluorescent_dissolved_organic_matter_concentration",
+    "fluorescent_dissolved_organic_matter_fluorescence_intensity",
+    "crude_oil_concentration",
+    "crude_oil_fluorescence_intensity",
+    "colored_dissolved_organic_matter_concentration"
+]
 
-    all_document = os.listdir(log_folder_path) # Get log folder all document
-
-    if (target_file_name in all_document) == False: # Creat excel
-        workbook = openpyxl.Workbook()
-        # get default workbook
-        sheet = workbook.active
-
-        for row in excel_column:
-            sheet.append(row)
-
-        workbook.save(file_path_and_name)
-        print("Excel created successfully")
-    
-    return file_path_and_name
-
-def insert_data_into_excel(file_path_and_name, new_data):
-    workbook = openpyxl.load_workbook(file_path_and_name)
-    sheet = workbook.active
-    next_row = sheet.max_row + 1
-    for col_num, value in enumerate(new_data, start = 1):
-        sheet.cell(row = next_row, column = col_num, value = value)
-    workbook.save(file_path_and_name)
-# =================Excel function block=================
-
-# ================Tkinter function block================
-def write_to_text(data_dict):
-    text_content = f"時間: {data_dict['time']}, 溫度: {data_dict['temperature']}, 濕度: {data_dict['humidity']}\n"
-    text.insert(1.0, text_content) 
-    
-    text.tag_add("first_line", "1.0", "1.end")
-    text.tag_add("other_line", "2.0", "end")
-    text.tag_config("first_line", background="#BEBEBE")
-    text.tag_config("other_line", background="white")
-
-def close():
-    global boolean
-    boolean = False
-    print("Exiting the program.")
-    root.destroy()
-    
-def status():
-    global stop
-    if(stop):
-        label_status.config(text="RUN",  bg = "#02DF82")
-        stop = False
-    else:
-        label_status.config(text="STOP", bg = "#FA8072")
-        stop = True
-
-def clear_data():
-    text.delete("1.0", tk.END)
-# ================Tkinter function block================
-def main():
-    ser = "" # define serial variable
-    while(boolean):   
-        if(stop):
-            time.sleep(1)
-            continue
-        try:
-            if(ser == ""): 
-                ser = serial.Serial('COM8', baudrate = 9600) # define COM PORT and baudrate
-            origin_send = ["01", "04", "00", "01", "00", "02"] # request command
-            data = modbus_run(ser, origin_send, 9) # send command and get data
-        except:
-            ser = ""
-            print("COM PORT ERROR Trying to reconnect", end = "") 
-            for i in range(3):
-                print('.', end = "")
-                time.sleep(1)
-            continue
-        # ============= Conversion and translate =============
+try:
+    ser = serial.Serial(port = 'COM8', baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1) # define COM PORT and baudrate
+    for i in command_set:
+        data_length = int(i[4] + i[5]) * 2 + 5
+        data = modbus_run(ser = ser, origin_command = i, data_length = data_length)
+        print(data)
         data = [format(x, '02x') for x in data]
-        value1 = data[3] + data[4]
-        value2 = data[5] + data[6]
-        temperature = int(value1, 16) # HEX to DEX
-        humidity = int(value2, 16) 
-        temperature = temperature / 10 # Temperature Conversion
-        humidity = humidity / 10 # Humidity Conversion
-        
-        # ============= Conversion and translate =============
-        
-        # ============= Save to Excel =============
-        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") 
-        
-        data_column = [["時間", "溫度", "濕度"]]
-        data_row = [current_time, temperature, humidity]
-        
-        file_path_and_name = creat_log_and_excel(data_column)
-        
-        data_dict = { 
-            "time":current_time,
-            "temperature":temperature,
-            "humidity":humidity
-        }
-        insert_data_into_excel(file_path_and_name, data_row) # insert data to excel
-        # ============= Save to Excel =============                
-        write_to_text(data_dict) # data write to text
 
-        time.sleep(2)
+        device_id = data[0]
+        function_code = data[1]
+        measured_value = int((data[3] + data[4] + data[5] + data[6]), 16)
+        data_quality = int((data[7] + data[8]), 16)
+        if data_quality == 0:
+            print("No errors or warnings.")
+        elif data_quality == 3:
+            print("Error reading parameter.")
+        elif data_quality == 5:
+            print("RDO Cap expired.")
 
-# globle variable
-boolean = True
-stop = False
-
-main_thread = threading.Thread(target = main)  # define thread
-main_thread.start() # thread start
-
-# creat Tkinter
-root = tk.Tk()
-root.title("Sensor Reader")
-root.protocol("WM_DELETE_WINDOW", close)
-
-# creat label, button and Text Elements
-label_status = tk.Label(root, text = "RUN", width=10, height=7, bg = "#02DF82" )
-label_status.grid(row=0, column=0, rowspan=2)
-button_status = tk.Button(root, text = "RUN/STOP", command = status, width=10, height=2)
-button_status.grid(row=2, column=0)
-button_close = tk.Button(root, text = "CLOSE", command = close, width=10, height=2)
-button_close.grid(row=3, column=0)
-button_clear_data = tk.Button(root, text = "ClearData", command = clear_data, width=10, height=2)
-button_clear_data.grid(row=4, column=0)
-text = tk.Text(root, height = 20, width = 50)
-text.grid(row=0, column=1, rowspan=5)
-
-# Run loop
-root.mainloop()
+except serial.serialutil.SerialException:
+    print("Serial Error...")
+except Exception as e:
+    print(e)

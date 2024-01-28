@@ -1,4 +1,6 @@
 import serial
+import time
+import struct
 
 # ================Modbus function block================
 def modbusCRC(msg : str) -> int: # CRC calculator
@@ -12,19 +14,25 @@ def modbusCRC(msg : str) -> int: # CRC calculator
             else:
                 crc >>= 1
     ba = crc.to_bytes(2, byteorder='little')
+
     return ba
 
-def modbus_run(ser, origin_command, data_length):
-    bytes_send = bytes([int(x, 16) for x in origin_command]) # list to bytes
+def add_crc(str_command):
+    bytes_send = bytes([int(x, 16) for x in str_command]) # list to bytes
     crc = modbusCRC(bytes_send) # CRC calculator function
-    origin_command.append(str('{:02X}'.format(crc[0]))) # append crc LO 
-    origin_command.append(str('{:02X}'.format(crc[1]))) # append crc HI     
-    bytes_send = bytes([int(x, 16) for x in origin_command])
+    str_command.append(str('{:02X}'.format(crc[0]))) # append crc LO 
+    str_command.append(str('{:02X}'.format(crc[1]))) # append crc HI   
+    return str_command 
 
+def modbus_send(ser, str_command):
+    bytes_send = bytes([int(x, 16) for x in str_command])
     ser.write(bytes_send) # send command
-    data = ser.read(data_length) # read response
 
-    return data
+def hex_to_float(hex_string):
+    byte_sequence = bytes.fromhex(hex_string)
+    float_value = struct.unpack('>f', byte_sequence)[0]
+    
+    return float_value
 # ================Modbus function block================
 
 command_set = [
@@ -126,27 +134,50 @@ parameter_names = [
     "crude_oil_fluorescence_intensity",
     "colored_dissolved_organic_matter_concentration"
 ]
-
-try:
-    ser = serial.Serial(port = 'COM8', baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1) # define COM PORT and baudrate
-    for i in command_set:
-        data_length = int(i[4] + i[5]) * 2 + 5
-        data = modbus_run(ser = ser, origin_command = i, data_length = data_length)
-        print(data)
+while(True):
+    ser = "" 
+    try:
+        if(ser == ""): 
+            ser = serial.Serial(port = 'COM9', baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1, timeout = 3) # define COM PORT and baudrateser = serial.Serial(port = 'COM9', baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1, timeout = 3) # define COM PORT and baudrate
+        command_wake_up = ["01", "0D"] 
+        command_wake_up = add_crc(command_wake_up)
+        print("Request: ", command_wake_up)
+        modbus_send(ser, command_wake_up)
+        time.sleep(1)
+        modbus_send(ser, command_wake_up)
+        data = ser.read(5)
         data = [format(x, '02x') for x in data]
+        print("Response :", data)
+        
+        for i in range(len(command_set)):
+            print(f"idx: {i+1} Request: ", command_set[i])
+            modbus_send(ser = ser, str_command = command_set[i])
+            time.sleep(1)
+            data = ser.read(19)
+            data = [format(x, '02x') for x in data]
+            print("Response :", data)
+            if(len(data) == 19):
+                device_id = data[0]
+                function_code = data[1]
+                measured_value = hex_to_float(data[3] + data[4] + data[5] + data[6])
+                data_quality = int((data[7] + data[8]), 16)
+                print("device_id: ", device_id)
+                print("function_code: ", function_code)
+                print(f"measured_value({parameter_names[i]}): ", measured_value)
+                if data_quality == 0:
+                    print("No errors or warnings.")
+                elif data_quality == 3:
+                    print("Error reading parameter.")
+                elif data_quality == 5:
+                    print("RDO Cap expired.")
 
-        device_id = data[0]
-        function_code = data[1]
-        measured_value = int((data[3] + data[4] + data[5] + data[6]), 16)
-        data_quality = int((data[7] + data[8]), 16)
-        if data_quality == 0:
-            print("No errors or warnings.")
-        elif data_quality == 3:
-            print("Error reading parameter.")
-        elif data_quality == 5:
-            print("RDO Cap expired.")
+            print()
 
-except serial.serialutil.SerialException:
-    print("Serial Error...")
-except Exception as e:
-    print(e)
+    except serial.serialutil.SerialException:
+        ser = "" 
+        print("Serial Error...")
+
+    except Exception as e:
+        print(e)
+
+    time.sleep(10)

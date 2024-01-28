@@ -11,6 +11,6 @@ for bdaddr in nearby_devices:
         break
 
 if target_address is not None:
-    print "found target bluetooth device with address ", target_address
+    print(f"found target bluetooth device with address {target_address}")
 else:
-    print "could not find target bluetooth device nearby"
+    print(f"could not find target bluetooth device nearby")

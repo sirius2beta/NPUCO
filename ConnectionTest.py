@@ -1,5 +1,7 @@
 import serial
-# ================Modbus function block================
+import time
+import struct
+# ================function block================
 def modbusCRC(msg : str) -> int: # CRC calculator
     crc = 0xFFFF
     for n in range(len(msg)):
@@ -11,27 +13,59 @@ def modbusCRC(msg : str) -> int: # CRC calculator
             else:
                 crc >>= 1
     ba = crc.to_bytes(2, byteorder='little')
+
     return ba
 
-def modbus_run(ser, origin_command, data_length):
-    bytes_send = bytes([int(x, 16) for x in origin_command]) # list to bytes
+def add_crc(str_command):
+    bytes_send = bytes([int(x, 16) for x in str_command]) # list to bytes
     crc = modbusCRC(bytes_send) # CRC calculator function
-    origin_command.append(str('{:02X}'.format(crc[0]))) # append crc LO 
-    origin_command.append(str('{:02X}'.format(crc[1]))) # append crc HI     
-    bytes_send = bytes([int(x, 16) for x in origin_command])
+    str_command.append(str('{:02X}'.format(crc[0]))) # append crc LO 
+    str_command.append(str('{:02X}'.format(crc[1]))) # append crc HI   
+    return str_command 
 
+def modbus_send(ser, str_command):
+    bytes_send = bytes([int(x, 16) for x in str_command])
     ser.write(bytes_send) # send command
-    data = ser.read(data_length) # read response
 
-    return data
-# ================Modbus function block================
-ser = serial.Serial(port = 'COM8', baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1) # define COM PORT and baudrate
-origin_command = ['01', '0D'] # , 'C1', 'D5'
-data = modbus_run(ser = ser, origin_command = origin_command, data_length = 5)
+def hex_to_float(hex_string):
+    byte_sequence = bytes.fromhex(hex_string)
+    float_value = struct.unpack('>f', byte_sequence)[0]
+    
+    return float_value
 
-"""
-origin_command = ['01', '03', '15', '4A', '00', '07', '21', 'D2']
-data_length = int(origin_command[4] + origin_command[5]) * 2 + 5
-data = modbus_run(ser = ser, origin_command = origin_command, data_length = data_length)
-print(data)
-"""
+# ================function block================
+ser = serial.Serial(port = 'COM9', baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1) # define COM PORT and baudrate
+
+command_wake_up = ["01", "0D"]
+command_wake_up = add_crc(command_wake_up)
+print("Request: ", command_wake_up)
+modbus_send(ser, command_wake_up)
+time.sleep(1)
+modbus_send(ser, command_wake_up)
+data = ser.read(5) # read 
+data = [format(x, '02x') for x in data]
+print("Response :", data)
+
+command_get_temperature = ['01', '03', '15', '4A', '00', '03']
+command_get_temperature = add_crc(command_get_temperature)
+print("Request: ", command_get_temperature)
+modbus_send(ser = ser, str_command = command_get_temperature)
+time.sleep(1)
+data = ser.read(11)
+data = [format(x, '02x') for x in data]
+print("Response :", data)
+device_id = data[0]
+function_code = data[1]
+measured_value = hex_to_float(data[3] + data[4] + data[5] + data[6])
+data_quality = int((data[7] + data[8]), 16)
+print("device_id: ", device_id)
+print("function_code: ", function_code)
+print("measured_value(temperature): ", measured_value)
+if data_quality == 0:
+    print("No errors or warnings.")
+elif data_quality == 3:
+    print("Error reading parameter.")
+elif data_quality == 5:
+    print("RDO Cap expired.")
+
+

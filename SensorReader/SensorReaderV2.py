@@ -37,6 +37,20 @@ def hex_to_float(hex_string):
     return float_value
 # ================Modbus function block================
 
+# ================Tkinter function block================
+def close():
+    global var_close
+    var_close = True
+    print("Exiting the program.")
+    root.destroy()
+
+def update_labels():
+    for i in range(len(measured_value_set)):
+        parameter_name = parameter_names[i]
+        measured_value = "{:.4f}".format(measured_value_set[i])
+        label_texts[i].set(f"{parameter_name} = {measured_value}")
+    root.after(1000, update_labels)
+# ================Tkinter function block================
 command_set = [
     ['01', '03', '15', '4A', '00', '07', '21', 'D2'],
     ['01', '03', '15', '51', '00', '07', '51', 'D5'],
@@ -61,30 +75,7 @@ command_set = [
     ['01', '03', '16', '1C', '00', '07', 'C1', '86'],
     ['01', '03', '16', '23', '00', '07', 'F1', '8A'],
     ['01', '03', '16', '2A', '00', '07', '21', '88'],
-    ['01', '03', '16', '31', '00', '07', '51', '8F'],
-    ['01', '03', '16', '38', '00', '07', '81', '8D'],
-    ['01', '03', '16', '3F', '00', '07', '30', '4C'],
-    ['01', '03', '16', '46', '00', '07', 'E1', '95'],
-    ['01', '03', '16', '4D', '00', '07', '90', '57'],
-    ['01', '03', '16', '54', '00', '07', '41', '90'],
-    ['01', '03', '16', '5B', '00', '07', '71', '93'],
-    ['01', '03', '16', '62', '00', '07', 'A1', '9E'],
-    ['01', '03', '16', '69', '00', '07', 'D0', '5C'],
-    ['01', '03', '16', '93', '00', '07', 'F0', '6D'],
-    ['01', '03', '16', '9A', '00', '07', '20', '6F'],
-    ['01', '03', '16', 'A1', '00', '07', '51', 'A2'],
-    ['01', '03', '16', 'A8', '00', '07', '81', 'A0'],
-    ['01', '03', '16', 'BD', '00', '07', '90', '64'],
-    ['01', '03', '16', 'C4', '00', '07', '41', 'BD'],
-    ['01', '03', '16', 'D9', '00', '07', 'D1', 'BB'],
-    ['01', '03', '16', 'E0', '00', '07', '01', 'B6'],
-    ['01', '03', '17', '18', '00', '07', '81', 'BB'],
-    ['01', '03', '17', '1F', '00', '07', '30', '7A'],
-    ['01', '03', '17', '26', '00', '07', 'E0', '77'],
-    ['01', '03', '17', '2D', '00', '07', '91', 'B5'],
-    ['01', '03', '17', '73', '00', '07', 'F0', '67'],
-    ['01', '03', '17', '7A', '00', '07', '20', '65'],
-    ['01', '03', '17', 'A4', '00', '07', '40', '5F']
+    ['01', '03', '16', '31', '00', '07', '51', '8F']
 ]
 
 parameter_names = [
@@ -111,42 +102,25 @@ parameter_names = [
     "total_suspended_solids",
     "external_voltage",
     "battery_capacity_remaining",
-    "rhodamine_wt_concentration",
-    "rhodamine_wt_fluorescence_intensity",
-    "chloride_mv",
-    "nitrate_as_nitrogen_concentration",
-    "nitrate_mv",
-    "ammonium_as_nitrogen_concentration",
-    "ammonium_mv",
-    "ammonia_as_nitrogen_concentration",
-    "total_ammonia_as_nitrogen_concentration",
-    "eh",
-    "velocity",
-    "chlorophyll_a_concentration",
-    "chlorophyll_a_fluorescence_intensity",
-    "blue_green_algae_phycocyanin_concentration",
-    "blue_green_algae_phycocyanin_fluorescence_intensity",
-    "blue_green_algae_phycoerythrin_concentration",
-    "blue_green_algae_phycoerythrin_fluorescence_intensity",
-    "fluorescein_wt_concentration",
-    "fluorescein_wt_fluorescence_intensity",
-    "fluorescent_dissolved_organic_matter_concentration",
-    "fluorescent_dissolved_organic_matter_fluorescence_intensity",
-    "crude_oil_concentration",
-    "crude_oil_fluorescence_intensity",
-    "colored_dissolved_organic_matter_concentration"
+    "rhodamine_wt_concentration"
 ]
+
+measured_value_set = [0] * 24
+
+var_close = False
+
 def main():
     ser = "" 
     while(True):    
         try:
-            if(ser == ""): 
-                ser = serial.Serial(port = 'COM9', baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1, timeout = 2) # define COM PORT and baudrateser = serial.Serial(port = 'COM9', baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1, timeout = 3) # define COM PORT and baudrate
-            command_wake_up = ["01", "0D"] 
-            command_wake_up = add_crc(command_wake_up)
+            if(var_close):
+                break
+            elif(ser == ""):
+                ser = serial.Serial(port = 'COM9', baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1, timeout = 2)
+            command_wake_up = ["01", "0D", "C1", "E5"]
             print("Request: ", command_wake_up)
             modbus_send(ser, command_wake_up)
-            time.sleep(0.2)
+            time.sleep(1)
             modbus_send(ser, command_wake_up)
             data = ser.read(5)
             data = [format(x, '02x') for x in data]
@@ -157,12 +131,13 @@ def main():
                 modbus_send(ser = ser, str_command = command_set[i])
                 time.sleep(1)
                 data = ser.read(19)
-                data = [format(x, '02x') for x in data]
+                data = [format(x, '02x') for x in data] #
                 print("Response :", data)
                 if(len(data) == 19):
                     device_id = data[0]
                     function_code = data[1]
                     measured_value = hex_to_float(data[3] + data[4] + data[5] + data[6])
+                    measured_value_set[i] = measured_value
                     data_quality = int((data[7] + data[8]), 16)
                     print("device_id: ", device_id)
                     print("function_code: ", function_code)
@@ -186,19 +161,26 @@ def main():
         except Exception as e:
             print(e)
 
-        time.sleep(10)
+        time.sleep(1)
 
 main_thread = threading.Thread(target = main)  # define thread
 main_thread.start() # thread start
 
-# creat Tkinter
 root = tk.Tk()
 root.title("Sensor Reader")
 root.protocol("WM_DELETE_WINDOW", close)
 
-# creat label, button and Text Elements
-label_status = tk.Label(root, text = "RUN", width=10, height=7, bg = "#02DF82" )
-label_status.grid(row=0, column=0, rowspan=2)
+label_texts = [] 
+for i in range(len(measured_value_set)):
+    text_var = tk.StringVar()
+    label_texts.append(text_var)
+    
+    label = tk.Label(root, textvariable = text_var,
+                    width=50, height=8, bg="#BEBEBE",
+                    anchor="w", bd=1, relief="solid",
+                    justify="center" )
+    
+    label.grid(row=i // 4, column=i % 4)
 
-# Run loop
+update_labels()
 root.mainloop()

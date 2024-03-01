@@ -17,7 +17,7 @@ void blink(int pin, int count){
 
 void setup()
 {
-  Serial.begin(19200, SERIAL_8E1);
+  Serial.begin(19200); // , SERIAL_8E1
   node.begin(1, Serial);
 
   pinMode(led, OUTPUT);

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<marinelink>
+    <enum name="SENSOR_TYPE">
+        <entry value="0" name="TEMPERATURE" type="float"></entry>
+        <entry value="1" name="HUMIDITY" type="float"></entry>
+    </enum>
+    <enum name="MESSAGE_TYPE">
+        <entry value="0" name="TEMPERATURE" type="int"></entry>
+        <entry value="1" name="VOLTAGE" type="float"></entry>
+    </enum>
+</marinelink>

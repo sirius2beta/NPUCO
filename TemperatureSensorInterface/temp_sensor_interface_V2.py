@@ -6,15 +6,15 @@ from enum import Enum
 
 # creat XML reader
 class SensorType(Enum):
-    TEMPERATURE = 1
-    HUMIDITY = 2
+    TEMPERATURE = 0
+    HUMIDITY = 1
 
 class SensorReader:
     # consructor
     def __init__(self):
         self.temperature = 0.0
         self.humidity = 0.0
-        self.comport = "COM8" # define comport
+        self.comport = "/dev/ttyUSB0" # define comport
 
         send_thread = threading.Thread(target=self.send)
         send_thread.daemon = True # open deamon thread
@@ -23,6 +23,7 @@ class SensorReader:
     def read_value(self, sensor_type):
         if sensor_type == SensorType.TEMPERATURE:
             value = self.temperature
+            print(self.temperature)
         elif sensor_type == SensorType.HUMIDITY:
             value = self.humidity
         else:
@@ -52,7 +53,7 @@ class SensorReader:
                 continue
             
     def packed_data(self, sensor_type, value):
-        data = struct.pack(">If", sensor_type, value)
+        data = struct.pack("<If", sensor_type, value)
         max_size = 256
         if len(data) > max_size:
             pass 

@@ -10,7 +10,7 @@ class SensorReader:
         self.temperature = 0.0
         self.humidity = 0.0
         self.comport = "COM8" # define comport
-        self.sensor_types = self.create_sensor_type_from_xml("D:/無人探測船專案資料/Code/NPUCO/TemperatureSensorInterface/SensorType.xml")
+        self.sensor_types = self.create_sensor_type_from_xml("NPUCO/TemperatureSensorInterface/SensorType.xml")
 
         send_thread = threading.Thread(target=self.send)
         send_thread.daemon = True # open deamon thread

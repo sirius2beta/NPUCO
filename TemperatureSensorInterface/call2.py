@@ -1,14 +1,19 @@
-from temp_sensor_interface_V2 import SensorType, SensorReader
+from temp_sensor_interface_V3 import SensorReader
 import struct
 import keyboard
+import time
 
 sensor_reader = SensorReader()
 
-while(True):
-    v = sensor_reader.read_value(SensorType.HUMIDITY)
-    v = struct.unpack(">If", v)
-    print(f"v: {v}%")
-    
-    if keyboard.is_pressed('esc'):
-        break
+data = sensor_reader.read_value("HUMIDITY")
+data = struct.unpack("<If", data)
+print("data:", data)
+
+sensor_reader.setSerialPort("COM8")
+
+time.sleep(10)
+
+data = sensor_reader.read_value("HUMIDITY")
+data = struct.unpack("<If", data)
+print("data:", data)
 

@@ -1,39 +1,39 @@
 import xml.etree.ElementTree as ET
-from SensorDataType import SensorDataType
 import serial
 import time
+import struct
 import threading
 
 class SensorReader:
     # consructor
     def __init__(self):
-        self.temperature = 0.0 
+        self.temperature = 0.0
         self.humidity = 0.0
+        self.sensor_types = {}
         self.comport = "COM8" # define comport
-        self.sensor_type = self.create_sensor_type_from_xml("D:/無人探測船專案資料/Code/NPUCO/TemperatureSensorInterface/SensorType.xml")
-        
+
         send_thread = threading.Thread(target=self.send)
         send_thread.daemon = True # open deamon thread
         send_thread.start()
 
     def read_value(self, sensor_type):
-        if sensor_type == self.sensor_type[0].getName():
-            index = self.sensor_type[0].getValue()
-            name = self.sensor_type[0].getName()
-            type = self.sensor_type[0].getType()
-            value = self.temperature
-            
-        elif sensor_type == self.sensor_type[1].getName():
-            index = self.sensor_type[1].getValue()
-            name = self.sensor_type[1].getName()
-            type = self.sensor_type[1].getType()
-            value = self.humidity
-        else:
-            raise ValueError("Unsupported sensor type")
-            
-        # print("value = ", value)
-        data = [index, name, type, value]
-        return self.packed_data(data)
+        try:
+            self.path = "D:/無人探測船專案資料/Code/NPUCO/TemperatureSensorInterface/SensorType.xm"
+            self.sensor_types = self.create_sensor_type_from_xml(self.path)
+            if sensor_type == self.sensor_types[0]:
+                sensor_type_index = 0
+                value = self.temperature
+                print(self.temperature)
+            elif sensor_type == self.sensor_types[1]:
+                sensor_type_index = 1
+                value = self.humidity
+            else:
+                raise ValueError("Unsupported sensor type")
+            # print("value = ", value)
+            return self.packed_data(sensor_type_index, value)
+        except:
+            print("XML path error.")
+        
 
     def send(self): # Thread
         ser = ""
@@ -59,26 +59,32 @@ class SensorReader:
     def setSerialPort(self, serial_port):
         self.comport = serial_port
 
-    def packed_data(self, data):
-        pass
+    def setXMLPath(self, path):
+        self.path = path
+        self.sensor_types = self.create_sensor_type_from_xml(self.path)
         
-        if len(data) > 256:
-            pass 
+    def getSensorType(self):
+        return self.sensor_types
 
+    def packed_data(self, sensor_type, value):
+        data = struct.pack("<If", sensor_type, value)
+        max_size = 256
+        if len(data) > max_size:
+            pass 
         return data
     
     def create_sensor_type_from_xml(self, xml_path):
+        sensor_types = {}
         tree = ET.parse(xml_path)
         root = tree.getroot()
-        sdt = []
         for enum in root.findall(".//enum[@name='SENSOR_TYPE']/entry"):
-            value = int(enum.get('value'))
             name = enum.get('name')
-            type = enum.get('type')
-            sdt.append(SensorDataType(value, name, type))
-        return sdt
+            value = int(enum.get('value'))
+            sensor_types[value] = name
+        return sensor_types
     
 
 sr = SensorReader()
-print(sr.read_value("TEMPERATURE"))
-print(sr.read_value("HUMIDITY"))
+sr.read_value("TEMPERATURE")
+sr.setXMLPath("D:/無人探測船專案資料/Code/NPUCO/TemperatureSensorInterface/SensorType.xml")
+print(sr.sensor_types)

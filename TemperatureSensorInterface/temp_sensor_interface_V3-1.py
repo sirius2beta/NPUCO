@@ -65,6 +65,9 @@ class SensorReader:
             self.sensor_types = self.create_sensor_type_from_xml(self.path)
         except: 
             print("XML path error.")
+    
+    def getXMLPath(self):
+        print(self.path)
 
     def getSensorType(self):
         return self.sensor_types
@@ -90,6 +93,7 @@ class SensorReader:
 """
 sr = SensorReader()
 sr.read_value("TEMPERATURE")
+sr.getXMLPath()
 sr.setXMLPath("D:/無人探測船專案資料/Code/NPUCO/TemperatureSensorInterface/SensorType.xml")
 print(sr.sensor_types)
 """

@@ -10,6 +10,7 @@ class SensorReader:
         self.temperature = 0.0
         self.humidity = 0.0
         self.sensor_types = {}
+        self.path = "D:/無人探測船專案資料/Code/NPUCO/TemperatureSensorInterface/SensorType.xml"
         self.comport = "COM8" # define comport
 
         send_thread = threading.Thread(target=self.send)
@@ -18,7 +19,6 @@ class SensorReader:
 
     def read_value(self, sensor_type):
         try:
-            self.path = "D:/無人探測船專案資料/Code/NPUCO/TemperatureSensorInterface/SensorType.xm"
             self.sensor_types = self.create_sensor_type_from_xml(self.path)
             if sensor_type == self.sensor_types[0]:
                 sensor_type_index = 0
@@ -60,9 +60,12 @@ class SensorReader:
         self.comport = serial_port
 
     def setXMLPath(self, path):
-        self.path = path
-        self.sensor_types = self.create_sensor_type_from_xml(self.path)
-        
+        try:
+            self.path = path
+            self.sensor_types = self.create_sensor_type_from_xml(self.path)
+        except: 
+            print("XML path error.")
+
     def getSensorType(self):
         return self.sensor_types
 
@@ -84,7 +87,9 @@ class SensorReader:
         return sensor_types
     
 
+"""
 sr = SensorReader()
 sr.read_value("TEMPERATURE")
 sr.setXMLPath("D:/無人探測船專案資料/Code/NPUCO/TemperatureSensorInterface/SensorType.xml")
 print(sr.sensor_types)
+"""

@@ -2,7 +2,6 @@ import xml.etree.ElementTree as ET
 from SensorDataType import SensorDataType
 import serial
 import time
-import struct
 import threading
 
 class SensorReader:

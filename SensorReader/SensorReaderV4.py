@@ -96,13 +96,16 @@ def Reader():
             if(ser == ""):
                 ser = serial.Serial(port = 'COM9', baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1, timeout = 5)
             for i in range(len(parameter_names)):
+                start_time = time.time() * 1000
                 data = send(ser = ser, command = command_set[i])
+                end_time = time.time() * 1000
                 if(i != 0 and i != 13 and i != 14 and i != 15):
                     # print(data)
                     print(parameter_chinese_names[i], end = ":")
                     value = struct.unpack('>f', bytes.fromhex(data[7:15]))[0]
                     valueDB[i] = value
-                    print(f" {value}")
+                    elapsed_time = end_time - start_time
+                    print(f" {value:.4f} \t用時: {elapsed_time:.2f} ms")
 
         except serial.serialutil.SerialException:
             ser = "" 
@@ -114,7 +117,7 @@ def Reader():
         except Exception as e:
             print(e)
 
-        time.sleep(5)
+        time.sleep(3)
         print("\n")
 
 

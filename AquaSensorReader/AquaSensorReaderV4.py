@@ -120,10 +120,9 @@ def Reader():
         time.sleep(3)
         print("\n")
 
-
 class UI:
     def __init__(self):
-        self.ui = QUiLoader().load("d:/無人探測船專案資料/Code/NPUCO/SensorReader/ui/SensorReaderUI.ui")
+        self.ui = QUiLoader().load("d:/無人探測船專案資料/Code/NPUCO/AquaSensorReader/ui/SensorReaderUI.ui")
         
         reader_thread = threading.Thread(target = Reader)  # define thread
         reader_thread.start() # thread start
@@ -154,7 +153,8 @@ class UI:
         self.ui.EV.setText(str(valueDB[20]))
         self.ui.BCR.setText(str(valueDB[21]))
 
-app = QApplication([])
-SensorReaderUI = UI()
-SensorReaderUI.ui.show()
-app.exec_()
+if __name__ == "__main__":
+    app = QApplication([])
+    SensorReaderUI = UI()
+    SensorReaderUI.ui.show()
+    app.exec_()

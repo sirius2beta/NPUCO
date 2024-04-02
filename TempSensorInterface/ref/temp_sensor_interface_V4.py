@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as ET
-from SensorDataType import SensorDataType
+from TemperatureSensorInterface.ref.SensorDataType import SensorDataType
 import serial
 import time
 import threading

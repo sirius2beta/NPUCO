@@ -10,7 +10,7 @@ class SensorReader:
         self.temperature = 0.0
         self.humidity = 0.0
         self.sensor_types = {}
-        self.path = "D:/無人探測船專案資料/Code/NPUCO/TemperatureSensorInterface/SensorType.xml"
+        self.path = "TempSensorInterface\SensorType.xml"
         self.comport = "COM8" # define comport
 
         send_thread = threading.Thread(target=self.send)
@@ -90,10 +90,9 @@ class SensorReader:
         return sensor_types
     
 
-"""
-sr = SensorReader()
-sr.read_value("TEMPERATURE")
-sr.getXMLPath()
-sr.setXMLPath("D:/無人探測船專案資料/Code/NPUCO/TemperatureSensorInterface/SensorType.xml")
-print(sr.sensor_types)
-"""
+
+if __name__ == "__main__":
+    sr = SensorReader()
+    while(True):
+        sr.read_value("TEMPERATURE")
+

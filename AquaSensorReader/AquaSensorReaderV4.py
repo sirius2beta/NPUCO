@@ -8,6 +8,30 @@ from PySide2.QtUiTools import QUiLoader
 from PySide2.QtCore import QFile, QTimer
 
 command_set = [
+    ['01', '0D', 'C1', 'E5'],
+    ['01', '03', '15', '4A', '00', '07', '21', 'D2'],
+    ['01', '03', '15', '51', '00', '07', '51', 'D5'],
+    ['01', '03', '15', '58', '00', '07', '81', 'D7'],
+    ['01', '03', '15', '5F', '00', '07', '30', '16'],
+    ['01', '03', '15', '66', '00', '07', 'E0', '1B'],
+    ['01', '03', '15', '82', '00', '07', 'A0', '2C'],
+    ['01', '03', '15', '89', '00', '07', 'D1', 'EE'],
+    ['01', '03', '15', '90', '00', '07', '00', '29'],
+    ['01', '03', '15', '97', '00', '07', 'B1', 'E8'],
+    ['01', '03', '15', '9E', '00', '07', '61', 'EA'],
+    ['01', '03', '15', 'A5', '00', '07', '10', '27'],
+    ['01', '03', '15', 'B3', '00', '07', 'F1', 'E3'],
+    ['01', '03', '15', 'BA', '00', '07', '21', 'E1'],
+    ['01', '03', '15', 'C1', '00', '07', '51', 'F8'],
+    ['01', '03', '15', 'C8', '00', '07', '81', 'FA'],
+    ['01', '03', '15', 'CF', '00', '07', '30', '3B'],
+    ['01', '03', '15', 'D6', '00', '07', 'E1', 'FC'],
+    ['01', '03', '15', 'F2', '00', '07', 'A1', 'F7'],
+    ['01', '03', '16', '15', '00', '07', '11', '84'],
+    ['01', '03', '16', '23', '00', '07', 'F1', '8A'],
+    ['01', '03', '16', '2A', '00', '07', '21', '88'],
+]
+"""
     ":010D00000000F2\r\n",
     ":0103154A000796\r\n",
     ":0103155100078F\r\n",
@@ -30,9 +54,8 @@ command_set = [
     ":010316150007CA\r\n",
     ":010316230007BC\r\n",
     ":0103162A0007B5\r\n"
-]
-
-parameter_names = [
+"""
+parameter_names = [  
     "wake_up",
     "temperature",
     "pressure",
@@ -85,8 +108,11 @@ parameter_chinese_names = [
 valueDB = [0.0] * 22
 
 def send(ser, command):
-    ser.write(command.encode())
-    response = ser.readline().decode()
+    command = bytes([int(x, 16) for x in command]) # modbus RTU
+    ser.write(command) # if use modbus ASCII, add .encode('utf-8')
+    response = ser.read(19)
+    response = [format(x, '02x') for x in response] # modbus RTU
+    print(f"response: {response}")
     return response
 
 def Reader():
@@ -94,18 +120,27 @@ def Reader():
     while(True):    
         try:
             if(ser == ""):
-                ser = serial.Serial(port = 'COM9', baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1, timeout = 5)
+                ser = serial.Serial(port = 'COM3', baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1, timeout = 3)
             for i in range(len(parameter_names)):
                 start_time = time.time() * 1000
                 data = send(ser = ser, command = command_set[i])
                 end_time = time.time() * 1000
-                if(i != 0 and i != 13 and i != 14 and i != 15):
-                    # print(data)
+                if(i != 0 and i != 13 and i != 14 and i != 15 and i != 18):
+                    """ modbus ASCII
+                    print(data)
                     print(parameter_chinese_names[i], end = ":")
                     value = struct.unpack('>f', bytes.fromhex(data[7:15]))[0]
                     valueDB[i] = value
                     elapsed_time = end_time - start_time
                     print(f" {value:.4f} \t用時: {elapsed_time:.2f} ms")
+                    """
+                    print(parameter_chinese_names[i], end = ":")
+                    value = data[3] + data[4] + data[5] + data[6]
+                    value = struct.unpack('>f', bytes.fromhex(value))[0]
+                    valueDB[i] = value
+                    elapsed_time = end_time - start_time
+                    print(f" {value:.4f} \t用時: {elapsed_time:.2f} ms")
+                    
 
         except serial.serialutil.SerialException:
             ser = "" 

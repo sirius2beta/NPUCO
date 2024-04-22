@@ -1,4 +1,5 @@
 import xml.etree.ElementTree as ET
+import matplotlib.pyplot as plt
 import serial
 import time
 import struct
